@@ -22,7 +22,8 @@ class PostView(View):
         if "num" in request.GET:
             post_num = int(request.GET["num"])
 
-        post_obj = Post.objects.filter(board=board).order_by("unique_number")[:post_num]
+        post_obj = Post.objects.filter(
+            board=board).order_by("unique_number")[:post_num]
         posts = json.loads(serialize("json", post_obj))
         for post in posts:
             author_pk = post["fields"]["author"]
@@ -86,7 +87,7 @@ class PostView(View):
     @login_required
     def put(self, request):
         dic = byte_to_dict(request.body)
-        if dic.get("pk") is None or dic.get("content") is None:
+        if dic.get("pk") is None or dic.get("content") is None or dic.get("title"):
             return send_json(illegalArgument)
         else:
             filtered = Post.objects.filter(pk=dic["pk"])
@@ -97,7 +98,10 @@ class PostView(View):
         userid = decoded["userid"]  # 로그인한 유저의 pk
 
         if userid == filtered[0].author.id:  # 로그인한 유저와 삭제할 대댓글 작성 유저가 같으면
-            filtered.update(content=dic["content"])
+            if dic.get("title"):
+                filtered.update(title=dic["title"])
+            elif dic.get("content"):
+                filtered.update(content=dic["content"])
             return send_json(changePostSucceed)
         else:
             return send_json(postDoesNotMatch)
